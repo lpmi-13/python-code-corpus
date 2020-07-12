@@ -45,7 +45,7 @@ def extract_and_store(node, mongo_collection, filepath, full_repo_url):
         # TODO : later, see if there's an easy way to check for the variable
         # being assigned, the equals, and the first char after the equals to
         # be at a particular line in the file, since this approach currently
-        # misses assignment like the following that get's split across lines:
+        # misses assignment like the following that gets split across lines:
         # new_dict = {
         #     "thing1": 3,
         #     "thing2": 2,
@@ -71,7 +71,6 @@ def extract_and_store(node, mongo_collection, filepath, full_repo_url):
 def grab_examples(full_repo_url, filepath):
     """
     we grab the contents of each file and parse it, then walk it
-    ...and print it for now...
     """
     with open(filepath, 'r') as source:
         file_contents = source.read()
