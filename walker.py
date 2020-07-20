@@ -3,12 +3,32 @@ import ast
 import astor
 import os
 import sys
+import shutil
+import argparse
 from pymongo import MongoClient
 
-GITHUB_FILE_PATH_INTERMEDIATE = '/blob/master/'
+parser = argparse.ArgumentParser()
+parser.add_argument("-D", "--delete_clones", help="delete cloned repos after processing", action="store_true")
+parser.add_argument("-L", "--language", help="specify the programming language")
 
-client = MongoClient()
-db = client.ast
+args = parser.parse_args()
+
+GITHUB_FILE_PATH_INTERMEDIATE = '/blob/master/'
+REPO_DIR = 'repos'
+
+if args.language is not None:
+    language = args.language
+else:
+    print('please specify a language...currently only "python" supported')
+    sys.exit()
+
+try:
+    client = MongoClient(host = ['localhost:27017'], serverSelectionTimeoutMS = 2000)
+    client.server_info()
+    db = client.ast
+except:
+    print('mongo isn\'t running yet...please start it first')
+    sys.exit()
 
 fors = db.fors
 ifs = db.ifs
@@ -71,53 +91,61 @@ def extract_and_store(node, mongo_collection, filepath, full_repo_url):
 def grab_examples(full_repo_url, filepath):
     """
     we grab the contents of each file and parse it, then walk it
+    ...though sometimes the file is something weird like a symlink, so skip it
+    if that's the case
     """
-    with open(filepath, 'r') as source:
-        file_contents = source.read()
-
     try:
-        tree = ast.parse(file_contents)
-        for node in ast.walk(tree):
-            if isinstance(node, ast.FunctionDef):
-                extract_and_store(node, functions, filepath, full_repo_url)
-            if isinstance(node, ast.AsyncFunctionDef):
-                extract_and_store(node, asyncfunctions, filepath, full_repo_url)
-            if isinstance(node, ast.If):
-                extract_and_store(node, ifs, filepath, full_repo_url)
-            if isinstance(node, ast.While):
-                extract_and_store(node, whiles, filepath, full_repo_url)
-            if isinstance(node, ast.For):
-                extract_and_store(node, fors, filepath, full_repo_url)
+        with open(filepath, 'r') as source:
+            file_contents = source.read()
 
-            if isinstance(node, ast.Assign):
-                # we're filtering out empty list assignment for now
-                if isinstance(node.value, ast.List) and node.value.elts != []:
-                    extract_and_store(node, lists, filepath, full_repo_url)
-                if isinstance(node.value, ast.ListComp):
-                    extract_and_store(node, listcomps, filepath, full_repo_url)
-                # we're filtering out empty dict assignment for now
-                if isinstance(node.value, ast.Dict) and node.value.keys != []:
-                    extract_and_store(node, dicts, filepath, full_repo_url)
-                if isinstance(node.value, ast.DictComp):
-                    extract_and_store(node, dictcomps, filepath, full_repo_url)
-                if isinstance(node.value, ast.Set):
-                    extract_and_store(node, sets, filepath, full_repo_url)
-                if isinstance(node.value, ast.SetComp):
-                    extract_and_store(node, setcomps, filepath, full_repo_url)
+        try:
+            tree = ast.parse(file_contents)
+            for node in ast.walk(tree):
+                if isinstance(node, ast.FunctionDef):
+                    extract_and_store(node, functions, filepath, full_repo_url)
+                if isinstance(node, ast.AsyncFunctionDef):
+                    extract_and_store(node, asyncfunctions, filepath, full_repo_url)
+                if isinstance(node, ast.If):
+                    extract_and_store(node, ifs, filepath, full_repo_url)
+                if isinstance(node, ast.While):
+                    extract_and_store(node, whiles, filepath, full_repo_url)
+                if isinstance(node, ast.For):
+                    extract_and_store(node, fors, filepath, full_repo_url)
+
+                if isinstance(node, ast.Assign):
+                    # we're filtering out empty list assignment for now
+                    if isinstance(node.value, ast.List) and node.value.elts != []:
+                        extract_and_store(node, lists, filepath, full_repo_url)
+                    if isinstance(node.value, ast.ListComp):
+                        extract_and_store(node, listcomps, filepath, full_repo_url)
+                    # we're filtering out empty dict assignment for now
+                    if isinstance(node.value, ast.Dict) and node.value.keys != []:
+                        extract_and_store(node, dicts, filepath, full_repo_url)
+                    if isinstance(node.value, ast.DictComp):
+                        extract_and_store(node, dictcomps, filepath, full_repo_url)
+                    if isinstance(node.value, ast.Set):
+                        extract_and_store(node, sets, filepath, full_repo_url)
+                    if isinstance(node.value, ast.SetComp):
+                        extract_and_store(node, setcomps, filepath, full_repo_url)
+        except:
+            print('ast parse error, skip this one')
     except:
-        print('ast parse error, skip this one')
+        print('skip this file')
 
-with open('url_list.txt', 'r') as input_file:
+with open('{}_repo_urls.txt'.format(language), 'r') as input_file:
     urls = input_file.readlines()
+
+if not os.path.exists(REPO_DIR):
+    os.mkdir(REPO_DIR)
 
 for url in urls:
     url = url.strip()
-    local_dir_name = url.split('/')[-1]
+    local_dir_name = os.path.join(REPO_DIR, url.split('/')[-1])
 
     print('cloning {}...'.format(url))
     
     try:
-        git.Git('./').clone(url)
+        git.Git('{}'.format(REPO_DIR)).clone(url)
     except:
         print('directory already exists...skipping...')
 
@@ -125,3 +153,7 @@ for url in urls:
         for name in files:
             if name.endswith('.py'):
                 grab_examples(url, os.path.join(path, name))
+
+    if args.delete_clones:
+        print('deleting {}'.format(local_dir_name))
+        shutil.rmtree(local_dir_name)

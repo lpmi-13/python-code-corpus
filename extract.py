@@ -1,8 +1,14 @@
 from pymongo import MongoClient
 import json
+import sys
 
-client = MongoClient()
-db = client.ast
+try:
+    client = MongoClient(host= ['localhost:27017'], serverSelectionTimeoutMS = 2000)
+    client.server_info()
+    db = client.ast
+except:
+    print('mongo isn\'t currently running...please start it first')
+    sys.exit()
 
 result_dict = {
   "fors": [],
