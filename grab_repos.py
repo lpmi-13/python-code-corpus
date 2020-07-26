@@ -4,13 +4,19 @@ import argparse
 
 parser = argparse.ArgumentParser()
 parser.add_argument("-L", "--language", help="specify the programming language")
+parser.add_argument("-N", "--number", help="specify the number of repos to search")
 
 args = parser.parse_args()
+
+if args.number is not None:
+    number_of_repos = args.number
+else:
+    number_of_repos = 25
 
 if args.language is not None:
     language = sys.argv[1]
     print('language is {}'.format(language))
-    r = requests.get('https://api.github.com/search/repositories?q=language:{}&stars:%3E0&sort=stars&per_page=100'.format(language))
+    r = requests.get('https://api.github.com/search/repositories?q=language:{}&stars:%3E0&sort=stars&per_page={}'.format(language, number_of_repos))
     data = r.json()
     url_set = {result['html_url'] for result in data['items']}
 

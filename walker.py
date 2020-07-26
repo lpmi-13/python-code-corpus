@@ -19,8 +19,8 @@ REPO_DIR = 'repos'
 if args.language is not None:
     language = args.language
 else:
-    print('please specify a language...currently only "python" supported')
-    sys.exit()
+    language = 'python'
+    print('choosing python as the default language')
 
 try:
     client = MongoClient(host = ['localhost:27017'], serverSelectionTimeoutMS = 2000)
