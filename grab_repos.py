@@ -14,7 +14,7 @@ else:
     number_of_repos = 25
 
 if args.language is not None:
-    language = sys.argv[1]
+    language = args.language
     print('language is {}'.format(language))
     r = requests.get('https://api.github.com/search/repositories?q=language:{}&stars:%3E0&sort=stars&per_page={}'.format(language, number_of_repos))
     data = r.json()
@@ -26,6 +26,6 @@ if args.language is not None:
             url_file.write('\n')
         
 else:
-    print('please specify a language')
+    print('please specify a language (eg, python grab_repos.py --language python)')
     sys.exit() 
 
