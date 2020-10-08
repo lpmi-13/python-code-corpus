@@ -48,7 +48,7 @@ def convert_code_line(index, contents):
 
 def extract_and_store(node, mongo_collection, filepath, full_repo_url):
 
-    file_path_in_remote_repo = filepath.split('/')[1:]
+    file_path_in_remote_repo = filepath.split('/')[2:]
     filename = filepath.split('/')[-1]
     # copy it back to what it looks like in the source, conveniently incorporating whitespace
     code = astor.to_source(node)
@@ -76,6 +76,7 @@ def extract_and_store(node, mongo_collection, filepath, full_repo_url):
             break
 
     try:
+        print('file path being written is {}'.format(file_path_in_remote_repo))
         mongo_collection.insert_one({"type": "{}".format(mongo_collection.name),
                              "project_source": full_repo_url,
                              "direct_link_to_file_line": full_repo_url + GITHUB_FILE_PATH_INTERMEDIATE + '/'.join(file_path_in_remote_repo) + '#L{}'.format(original_file_line),
