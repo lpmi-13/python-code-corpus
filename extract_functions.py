@@ -13,7 +13,11 @@ except:
     sys.exit()
 
 result_dict = {
-  "functions": [],
+    "functions": {
+        "small": [],
+        "medium": [],
+        "large": []
+    }
 }
 
 
@@ -24,7 +28,12 @@ def output_json_for_project(handle, project_name, upper_bound, lower_bound):
     ).limit(1)
 
     for result in results:
-        result_dict[result['type']].append(json.dumps(result))
+        if lower_bound < 4:
+            result_dict[result['type']]['small'].append(json.dumps(result))
+        elif lower_bound > 6:
+             result_dict[result['type']]['large'].append(json.dumps(result))       
+        else:
+              result_dict[result['type']]['medium'].append(json.dumps(result))                   
 
 def get_all_distinct(handle):
     results = handle.distinct('project_source')
