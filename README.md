@@ -1,6 +1,6 @@
 # extracting python code blocks
 
-**(currently used as a data source for https://examplar-code.netlify.ap)**
+**(currently used as a data source for https://examplar-code.netlify.app as well as https://parsons-problems.netlify.app)**
 
 So I wanted to grab a bunch of example python code from real github projects.
 
